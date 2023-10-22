@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ouioui"
+version = "2023.10-dev1"
+description = "Microservice to download OUI sources and normalize them into a database to query."
+authors = ["hobobandy"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+peewee = "^3.17.0"
+requests = "^2.31.0"
+fastapi = "^0.104.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
