@@ -1,6 +1,6 @@
 # ouioui
 
-Small utility script and library to download the IEEE OUI MA-L assignments file, override them if needed, and save them into a SQLite db to query.
+small utility script, and library, to download the IEEE OUI MA-L assignments file, override them if needed, and save them into a SQLite db to query.
 
 ## requirements
 
@@ -31,4 +31,5 @@ actions:
   --update              fetch sources, load custom oui, rebuild database
   --package_for_kismet  fetch sources, package as .txt.gz for kismet (ouifile=<path> in kismet_site.conf)
 
-version 2023.10dev1```
+version 2023.10dev1
+```
