@@ -1,4 +1,4 @@
-# Default config file
+# Test config file
 
 # File path for the OUI database file
 # db_path = "/home/user1/ouioui/data/oui.db"
@@ -6,7 +6,7 @@
 # Custom OUI
 # Array of arrays ["AA:BB:CC", "Example Manuf"]
 #
-# custom_oui = [
-#  ["AA:BB:CC", "Example Manuf"],
-#  ["DD:EE:FF", "Example Manuf 2"]
-# ]
+custom_oui = [
+  ["AA:BB:CC", "Test Manuf"],
+  ["DD:EE:FF", "Test Manuf 2"]
+]
