@@ -5,7 +5,7 @@ import ouioui
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Small utility script and library to download the IEEE OUI MA-L assignments file, override them if needed, and save them into a SQLite db to query.",
+        description="small utility script, and library, to download the IEEE OUI MA-L assignments file, override them if needed, and save them into a SQLite db to query.",
         epilog=f"version {ouioui.version}"
     )
     parser.add_argument(

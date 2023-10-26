@@ -1,5 +1,7 @@
 # VS Code
 .vscode
+data/*
+tests/*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
