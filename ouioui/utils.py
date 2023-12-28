@@ -29,3 +29,21 @@ def get_ieee_oui(prefix_type: str = "base 16"):
         logger.info(f"IEEE OUI - Found {len(ieee_set)} records...")
     finally:
         return ieee_set
+
+
+def parse_custom_oui(custom_oui: set | list | tuple) -> set:
+    valid_set = set()
+
+    logger.info(f"Custom OUI - List contains {len(custom_oui)} entries...")
+
+    for prefix, manuf in custom_oui:
+        # match AA-BB-CC, AA:BB:CC, AABBCC
+        m = re.fullmatch(r"^([0-9A-F]{2})[:-]?([0-9A-F]{2})[:-]?([0-9A-F]{2})$", prefix)
+        if m:
+            # normalize to AA:BB:CC
+            valid_set.add((f"{m[1]}:{m[2]}:{m[3]}", manuf))
+            continue
+
+    logger.info(f"Custom OUI - Found {len(valid_set)} valid entries...")
+
+    return sorted(valid_set)

@@ -1,7 +1,13 @@
+# Ouioui
+data/*
+!data/.gitkeep
+config/*
+!config/.gitkeep
+!config/example.toml
+tests/*.db
+
 # VS Code
 .vscode
-data/*
-tests/*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

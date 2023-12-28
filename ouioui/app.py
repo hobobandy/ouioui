@@ -2,76 +2,38 @@ import argparse
 import gzip
 import re
 import logging
-import tomllib
-from dataclasses import fields, dataclass
+
 from datetime import datetime
-from peewee import *
 from pathlib import Path
-from .utils import get_ieee_oui
+
+from .database import *
+from .utils import get_ieee_oui, parse_custom_oui
 
 
 logger = logging.getLogger(__name__)
 
 
-class OUI(Model):
-    prefix = CharField()
-    org = CharField()
-
-
-class LastUpdate(Model):
-    timestamp = TextField()
-
-
-@dataclass
-class OUIConfig:
-    db_path: Path = Path.cwd() / "oui.db"
-    logging_level: int = logging.INFO
-    custom_oui: set | list | tuple = ()
-
-
-def get_config(config_path: Path, to_override: OUIConfig = None) -> OUIConfig:
-    if to_override:
-        config = to_override
-    else:
-        config = OUIConfig()
-
-    try:
-        with open(config_path, "rb") as f:
-            config_dict = tomllib.load(f)
-            for field in fields(config):
-                try:
-                    # @todo is there a more clever way to do this?
-                    match field.name:
-                        case "db_path":
-                            setattr(config, field.name, Path(config_dict[field.name]))
-                        case _:
-                            setattr(config, field.name, config_dict[field.name])
-                except KeyError:
-                    continue
-    except tomllib.TOMLDecodeError:
-        logging.error(
-            "Invalid configuration, ignored and using defaults."
-        )  # @todo probably not the expected behavior, so change this?
-    finally:
-        return config
-
-
-class Ouioui:
-    def __init__(self, config: OUIConfig):
+class App:
+    def __init__(self, config):
         self.config = config
-
-        logging.basicConfig(
-            format="%(asctime)s: %(message)s",
-            level=self.config.logging_level,
-            datefmt="%H:%M:%S",
-        )
-
-        db = SqliteDatabase(config.db_path)
+    
+    def db_init(self):
+        db_file = Path(self.config.db_path)
+        
+        if not db_file.parent.exists():
+            db_file.parent.mkdir(exist_ok=True)
+            logger.debug(f"Making database folder: {config.db_path.parent}")
+        else:
+            logger.debug("Database folder already exists, moving on...")
+        
+        db = SqliteDatabase(db_file)
         db.bind([OUI, LastUpdate])
         db.connect()
         db.create_tables([OUI, LastUpdate])
 
     def update(self):
+        self.db_init()
+        
         lastUpdate, _ = LastUpdate.get_or_create(id=0, defaults={"timestamp": "Never"})
         logger.info(f"Last update: {lastUpdate.timestamp}")
 
@@ -109,6 +71,8 @@ class Ouioui:
         logger.info(f"Total of {len(list_oui)} OUI records saved.")
 
     def update_custom(self):
+        self.db_init()
+        
         lastUpdate, _ = LastUpdate.get_or_create(id=0, defaults={"timestamp": "Never"})
         logger.info(f"Last update: {lastUpdate.timestamp}")
 
@@ -157,6 +121,8 @@ class Ouioui:
         )
 
     def lookup(self, addr: str) -> set:
+        self.db_init()
+        
         # match AA-BB-CC, AA:BB:CC, AABBCC - up to full MAC addr
         m = re.fullmatch(
             r"^([0-9A-F]{2})[:-]?([0-9A-F]{2})[:-]?([0-9A-F]{2})(?:[:-]?(?:[0-9A-F]{2})?[:-]?(?:[0-9A-F]{2})?[:-]?(?:[0-9A-F]{2})?)?$",
@@ -174,51 +140,5 @@ class Ouioui:
         return set(o.org for o in i)
 
 
-def from_args(args: argparse.Namespace) -> Ouioui:
-    config = get_config("config.toml")
-
-    if args.config:
-        config = get_config(args.config, config)
-
-    logger.setLevel(logging.DEBUG if args.debug else config.logging_level)
-
-    if not config.db_path.exists():
-        config.db_path.parent.mkdir(exist_ok=True)
-        logger.debug(f"Making database folder: {config.db_path.parent}")
-    else:
-        logger.debug("Database folder already exists, moving on...")
-
-    return Ouioui(config)
-
-
-def from_config(config_path: Path) -> Ouioui:
-    config = get_config("config.toml")
-    config = get_config(config_path, config)
-
-    logger.setLevel(config.logging_level)
-
-    if not config.db_path.exists():
-        config.db_path.parent.mkdir(exist_ok=True)
-        logger.debug(f"Making database folder: {config.db_path.parent}")
-    else:
-        logger.debug("Database folder already exists, moving on...")
-
-    return Ouioui(config)
-
-
-def parse_custom_oui(custom_oui: set | list | tuple) -> set:
-    valid_set = set()
-
-    logger.info(f"Custom OUI - List contains {len(custom_oui)} entries...")
-
-    for prefix, manuf in custom_oui:
-        # match AA-BB-CC, AA:BB:CC, AABBCC
-        m = re.fullmatch(r"^([0-9A-F]{2})[:-]?([0-9A-F]{2})[:-]?([0-9A-F]{2})$", prefix)
-        if m:
-            # normalize to AA:BB:CC
-            valid_set.add((f"{m[1]}:{m[2]}:{m[3]}", manuf))
-            continue
-
-    logger.info(f"Custom OUI - Found {len(valid_set)} valid entries...")
-
-    return sorted(valid_set)
+def start_app(config):
+    return App(config)
